@@ -12,7 +12,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Pranav Rao
  */
 @Service
-public class WordGridService {
+public class WordSearchService {
+
+    private record Coordinate(int x, int y) {
+    }
 
     private enum Direction {
         HORIZONTAL(0, 1),
@@ -39,16 +42,13 @@ public class WordGridService {
         }
     }
 
-
-    private record Coordinate(int x, int y) {
-    }
-
     public char[][] generateGrid(int gridSize, List<String> words) {
-        List<Coordinate> coordinates = generateShuffledCoordinates(gridSize);
+        List<Coordinate> coordinates = generateCoordinates(gridSize);
         char[][] contents = new char[gridSize][gridSize];
         fillGridWithUnderscores(contents);
 
         for (String word : words) {
+            Collections.shuffle(coordinates);
             for (Coordinate coordinate : coordinates) {
                 Direction selectedDirection = getDirectionForFit(contents, word, coordinate);
                 if (selectedDirection != null) {
@@ -67,14 +67,13 @@ public class WordGridService {
         }
     }
 
-    private List<Coordinate> generateShuffledCoordinates(int gridSize) {
+    private List<Coordinate> generateCoordinates(int gridSize) {
         List<Coordinate> coordinates = new ArrayList<>();
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 coordinates.add(new Coordinate(i, j));
             }
         }
-        Collections.shuffle(coordinates);
         return coordinates;
     }
 
@@ -108,8 +107,8 @@ public class WordGridService {
         int x = coordinate.x;
         int y = coordinate.y;
 
-        for (char ignored : word.toCharArray()) {
-            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize || contents[x][y] != '_') {
+        for (char ch : word.toCharArray()) {
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize || (contents[x][y] != '_' && contents[x][y] != ch)) {
                 return false;
             }
             x += direction.getXDelta();
@@ -117,7 +116,6 @@ public class WordGridService {
         }
         return true;
     }
-
 
     private void placeWordInSelectedDirection(char[][] contents, String word, Coordinate coordinate, Direction direction) {
         int x = coordinate.x;
